@@ -1,0 +1,23 @@
+{
+  "name": "capstone",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start-prod": "NODE_ENV=production node ./src/server/server.js",
+    "start-dev": "nodemon ./src/server/server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@hapi/hapi": "^21.3.12",
+    "@hapi/joi": "^17.1.1",
+    "axios": "^1.7.7",
+    "dotenv": "^16.4.5",
+    "firebase-admin": "^13.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.7"
+  }
+}
