@@ -1,3 +1,5 @@
 node_modules
+model
 .env
 capstone_service_account.json
+Dockerfile

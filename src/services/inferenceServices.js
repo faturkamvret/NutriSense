@@ -1,8 +1,8 @@
 const tf = require('@tensorflow/tfjs-node');
 const InputError = require('../exceptions/InputError');
  
-async function predictClassification(model, image) {
+async function predictDisease(model, data) {
     
 }
  
-module.exports = predictClassification;
+module.exports = predictDisease;
