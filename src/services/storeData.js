@@ -82,9 +82,28 @@ const storePredictionData = async (userId, bmi, diseases, nutritionData) => {
     }
 };
 
+const storeDetectionData = async (userId, annotatedImage, detectedClasses) => {
+    try {
+        const detectRef = firestore.collection('detect').doc(generateUserId());
+        await detectRef.set({
+            userId: userId,
+            annotated_image: annotatedImage,
+            detected_classes: detectedClasses,
+            createdAt: Firestore.Timestamp.now()
+        });
+        console.log(`Detection data stored for userId: ${userId}`);
+    } catch (error) {
+        console.error("Error storing detection data:", error);
+        throw new Error("Failed to store detection data");
+    }
+};
+
+
+
 module.exports = {
     storeUserData,
     emailExists,
     usernameExists,
     storePredictionData,
+    storeDetectionData,
 };

@@ -16,4 +16,6 @@ async function predictDisease(model, data) {
     }
 }
 
+
+
 module.exports = predictDisease;

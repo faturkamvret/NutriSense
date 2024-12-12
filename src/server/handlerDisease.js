@@ -89,7 +89,7 @@ const predictUserDisease = async (req, h) => {
         const nutritionData = {
             sodium: sodium,
             fat: fat,
-            protein: protein,
+            protein: protein,   
             carbs: carbs
         };
 
@@ -131,7 +131,30 @@ const getUserPredictionData = async (req, h) => {
     }
 };
 
+const getUserNutrition = async (req, h) => {
+    try {
+        const userId = req.user.userId;
+        const predictionsRef = firestore.collection('predictions').doc(userId);
+        const predictionDoc = await predictionsRef.get();
+
+        if (!predictionDoc.exists) {
+            return h.response({ message: "Nutrition data not found" }).code(404);
+        }
+
+        const predictionData = predictionDoc.data();
+        const nutritionData = predictionData.nutrition;
+
+        // Mengembalikan hanya data nutrisi
+        return h.response(nutritionData).code(200);
+
+    } catch (error) {
+        console.error("Error fetching nutrition data:", error);
+        return h.response({ message: "Failed to fetch nutrition data", error: error.message }).code(500);
+    }
+};
+
 module.exports = {
     predictUserDisease,
     getUserPredictionData,
+    getUserNutrition,
 };

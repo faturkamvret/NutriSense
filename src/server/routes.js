@@ -1,5 +1,6 @@
 const { userRegister, userLogin, patchUserData, getUserData } = require('./handlerUser');
-const { predictUserDisease, getUserPredictionData } = require('./handlerDisease');
+const { predictUserDisease, getUserPredictionData, getUserNutrition } = require('./handlerDisease');
+const { match } = require('./handlerFood');
 const authMiddleware = require('../middleware/auth');
 
 const routes = [
@@ -54,6 +55,27 @@ const routes = [
             pre: [{ method: authMiddleware }],
         },
         handler: getUserPredictionData,
+    },
+    {
+        method: 'GET',
+        path: '/user/nutrition', // Path untuk mengambil data nutrisi
+        options: {
+            pre: [{ method: authMiddleware }], // Autentikasi diperlukan
+        },
+        handler: getUserNutrition, // Handler untuk data nutrisi
+    },
+    {
+        method: 'POST',
+        path: '/user/detect', // More descriptive path
+        options: {
+            pre: [{ method: authMiddleware }],
+            payload: {
+                parse: true,
+                allow: 'multipart/form-data',
+                multipart: true,
+            },
+        },
+        handler: match,
     },
 ];
 
