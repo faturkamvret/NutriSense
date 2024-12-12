@@ -1,4 +1,5 @@
 const { userRegister, userLogin, patchUserData, getUserData } = require('./handlerUser');
+const { predictUserDisease, getUserPredictionData } = require('./handlerDisease');
 const authMiddleware = require('../middleware/auth');
 
 const routes = [
@@ -37,6 +38,22 @@ const routes = [
             pre: [{ method: authMiddleware }],
         },
         handler: getUserData,
+    },
+    {
+        method: 'POST',
+        path: '/user/predict',
+        options: {
+            pre: [{ method: authMiddleware }],
+        },
+        handler: predictUserDisease,
+    },
+    {
+        method: 'get',
+        path: '/user/disease',
+        options: {
+            pre: [{ method: authMiddleware }],
+        },
+        handler: getUserPredictionData,
     },
 ];
 

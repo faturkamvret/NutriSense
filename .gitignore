@@ -1,5 +1,5 @@
 node_modules
 model
-.env
+modelh5
 capstone_service_account.json
-Dockerfile
+

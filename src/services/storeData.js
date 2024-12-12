@@ -44,8 +44,47 @@ const userIdExists = async (userId) => {
     return userSnapshot.exists; // Mengembalikan true jika userId sudah ada
 };
 
+// Fungsi untuk menyimpan hasil prediksi
+const storePredictionData = async (userId, bmi, diseases, nutritionData) => {
+    try {
+        // Referensi ke dokumen di koleksi 'predictions' menggunakan userId sebagai ID dokumen
+        const predictionsRef = firestore.collection('predictions').doc(userId);
+
+        // Periksa apakah dokumen sudah ada
+        const docSnapshot = await predictionsRef.get();
+
+        if (docSnapshot.exists) {
+            // Jika dokumen sudah ada, perbarui field tertentu
+            await predictionsRef.set(
+                {
+                    bmi: bmi, // BMI sebagai field di level atas
+                    diseases: diseases,
+                    nutrition: nutritionData,
+                    createdAt: Firestore.Timestamp.now(),
+                },
+                { merge: true } // Gunakan merge untuk hanya menimpa field tertentu
+            );
+            console.log(`Prediction updated for userId: ${userId}`);
+        } else {
+            // Jika dokumen belum ada, buat dokumen baru
+            await predictionsRef.set({
+                userId: userId,
+                bmi: bmi, // BMI sebagai field di level atas
+                diseases: diseases,
+                nutrition: nutritionData,
+                createdAt: Firestore.Timestamp.now(),
+            });
+            console.log(`New prediction created for userId: ${userId}`);
+        }
+    } catch (error) {
+        console.error("Error storing or updating prediction:", error);
+        throw new Error("Failed to store or update prediction");
+    }
+};
+
 module.exports = {
     storeUserData,
     emailExists,
     usernameExists,
+    storePredictionData,
 };
