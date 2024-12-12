@@ -90,7 +90,7 @@ const predictUserDisease = async (req, h) => {
             sodium: sodium,
             fat: fat,
             protein: protein,   
-            carbs: carbs
+            carbohydrate: carbs
         };
 
         // Simpan ke Firestore

@@ -1,27 +1,28 @@
 const axios = require('axios');
+const FormData = require('form-data');
 const { Firestore } = require('@google-cloud/firestore');
-const { storeDetectionData } = require('../services/storeData'); // Implement this function
+const { storeDetectionData } = require('../services/storeData');
 const firestore = new Firestore();
 const PREDICT_URL = process.env.PREDICT_URL;
 
-const match = async (req, h) => {
-    const userId = req.user.userId; // Get userId from authentication middleware
-    const image = req.payload; // Hapi.js handles multipart; this is the stream
+const detectAndMatch = async (req, h) => {
+    const userId = req.user.userId;
+    const imageData = req.payload.image;
 
-    console.log('Received payload:', req.payload); // Log for debugging
+    console.log('Received payload:', req.payload);
 
-    if (!image || !image.hapi) {
+    if (!imageData) {
         return h.response({ status: 'fail', message: 'Invalid image upload.' }).code(400);
     }
 
     try {
-        const response = await axios.post(PREDICT_URL, image.hapi.data, { // Send the stream directly
-            headers: {
-                'Content-Type': 'application/octet-stream', // Or a more specific content type if known
-                'Content-Disposition': `form-data; name="key_image"; filename="${image.hapi.filename}"` // Important for Flask
-            },
-            maxContentLength: Infinity, // Handle large files
-            maxBodyLength: Infinity // Handle large files
+        const formData = new FormData();
+        formData.append('image', imageData, { filename: 'image.jpg' });
+
+        const response = await axios.post(PREDICT_URL, formData, {
+            headers: formData.getHeaders(),
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity
         });
 
         const { annotated_image, detected_classes } = response.data;
@@ -56,4 +57,4 @@ const match = async (req, h) => {
     }
 };
 
-module.exports = { match };
+module.exports = { detectAndMatch };

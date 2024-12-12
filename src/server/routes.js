@@ -1,6 +1,6 @@
 const { userRegister, userLogin, patchUserData, getUserData } = require('./handlerUser');
 const { predictUserDisease, getUserPredictionData, getUserNutrition } = require('./handlerDisease');
-const { match } = require('./handlerFood');
+const { detectAndMatch } = require('./handlerFood');
 const authMiddleware = require('../middleware/auth');
 
 const routes = [
@@ -75,7 +75,7 @@ const routes = [
                 multipart: true,
             },
         },
-        handler: match,
+        handler: detectAndMatch,
     },
 ];
 
