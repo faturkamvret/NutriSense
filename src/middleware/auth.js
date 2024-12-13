@@ -1,21 +1,20 @@
-const firebaseAdmin = require('../config/firebase');
+const jwt = require('jsonwebtoken');
 
-const authMiddleware = async (request, h) => {
-    const authorizationHeader = request.headers.authorization;
+const authMiddleware = async (req, h) => {
+    const authHeader = req.headers.authorization;
 
-    if (!authorizationHeader || !authorizationHeader.startsWith('Bearer ')) {
-        return h.response({ message: 'Unauthorized' }).code(401).takeover();
+    if (!authHeader) {
+        return h.response({ message: "Missing authorization header" }).code(401);
     }
 
-    const idToken = authorizationHeader.split('Bearer ')[1];
+    const token = authHeader.split(' ')[1];
 
     try {
-        const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
-        request.user = decodedToken;
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded; // Simpan informasi pengguna di request
         return h.continue;
     } catch (error) {
-        console.error('Error verifying Firebase ID token:', error);
-        return h.response({ message: 'Unauthorized' }).code(401).takeover();
+        return h.response({ message: "Invalid token" }).code(401);
     }
 };
 

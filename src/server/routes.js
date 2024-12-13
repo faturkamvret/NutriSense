@@ -1,7 +1,7 @@
-const { userRegister, userLogin, fillUserData } = require('./handlerUser');
-const authMiddleware = require('../middleware/auth'); 
-// cek nanti dummy
-const { getFoodRecommendations } = require('../service/foodRecommendation');
+const { userRegister, userLogin, patchUserData, getUserData } = require('./handlerUser');
+const { predictUserDisease, getUserPredictionData, getUserNutrition } = require('./handlerDisease');
+const { detectAndMatch } = require('./handlerFood');
+const authMiddleware = require('../middleware/auth');
 
 const routes = [
     {
@@ -14,6 +14,7 @@ const routes = [
         path: '/login',
         handler: userLogin,
     },
+    /* POST edit data
     {
         method: 'POST',
         path: '/user/data',
@@ -22,24 +23,59 @@ const routes = [
         },
         handler: fillUserData,
     },
+    */
     {
-        method: 'GET',
-        path: '/user/recommendations',
+        method: 'PATCH',
+        path: '/user/data',
         options: {
             pre: [{ method: authMiddleware }],
         },
-        handler: async (req, h) => {
-            try {
-                const recommendations = await getFoodRecommendations(req.user.uid);
-                return h.response({
-                    status: "OK",
-                    message: "Food recommendations retrieved successfully",
-                    data: recommendations,
-                }).code(200);
-            } catch (error) {
-                return h.response({ message: error.message }).code(500);
-            }
+        handler: patchUserData,
+    },
+    {
+        method: 'GET',
+        path: '/user/data',
+        options: {
+            pre: [{ method: authMiddleware }],
         },
+        handler: getUserData,
+    },
+    {
+        method: 'POST',
+        path: '/user/predict',
+        options: {
+            pre: [{ method: authMiddleware }],
+        },
+        handler: predictUserDisease,
+    },
+    {
+        method: 'get',
+        path: '/user/disease',
+        options: {
+            pre: [{ method: authMiddleware }],
+        },
+        handler: getUserPredictionData,
+    },
+    {
+        method: 'GET',
+        path: '/user/nutrition', // Path untuk mengambil data nutrisi
+        options: {
+            pre: [{ method: authMiddleware }], // Autentikasi diperlukan
+        },
+        handler: getUserNutrition, // Handler untuk data nutrisi
+    },
+    {
+        method: 'POST',
+        path: '/user/detect', // More descriptive path
+        options: {
+            pre: [{ method: authMiddleware }],
+            payload: {
+                parse: true,
+                allow: 'multipart/form-data',
+                multipart: true,
+            },
+        },
+        handler: detectAndMatch,
     },
 ];
 

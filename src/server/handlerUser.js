@@ -1,92 +1,97 @@
-const { firestore } = require("../config/gcp");
-const firebaseAdmin = require("../config/firebase");
-const axios = require("axios");
+const { storeUserData, emailExists, usernameExists } = require("../services/storeData");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const { Firestore } = require('@google-cloud/firestore');
+
+// Inisialisasi Firestore
+const firestore = new Firestore();
 
 const userRegister = async (req, h) => {
     try {
-        const { email, password, username } = req.payload;
+        const { email, password, username, age, weight, height, gender, blood_pressure, cholesterol, blood_sugar, allergies } = req.payload;
 
         if (!username) {
             throw new Error("Username is required.");
         }
 
-        // Create user in Firebase Authentication
-        const userRecord = await firebaseAdmin.auth().createUser({
-            email,
-            password,
-        });
+        // Cek apakah email sudah terdaftar
+        if (await emailExists(email)) {
+            return h.response({ status: "fail", message: "Email is already registered." }).code(400);
+        }
 
-        await firestore.collection("users").doc(userRecord.uid).set({
-            email: email,
-            username: username,
-            age: null,
-            weight: null,
-            height: null,
-            gender: null,
-            blood_pressure: null,
-            cholesterol: null,
-            blood_sugar: null,
-            allergies: null,
+        // Cek apakah username sudah terdaftar
+        if (await usernameExists(username)) {
+            return h.response({ status: "fail", message: "Username is already taken." }).code(400);
+        }
+
+        // Hash password
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Simpan pengguna di Firestore
+        const userId = await storeUserData(email, username, {
+            password: hashedPassword,
+            age: age || null,
+            weight: weight || null,
+            height: height || null,
+            gender: gender || null,
+            blood_pressure: blood_pressure || null,
+            cholesterol: cholesterol || null,
+            blood_sugar: blood_sugar || null,
+            allergies: allergies || null,
         });
 
         return h
-            .response({ status: "Created", message: "User registered successfully", email: email })
+            .response({ status: "Created", message: "User registered successfully", userId: userId })
             .code(201);
     } catch (error) {
-        return h.response({ status: "fail", message: "Failed to register user", error }).code(400);
+        console.error("Error registering user:", error);
+        return h.response({ status: "fail", message: "Failed to register user", error: error.message }).code(400);
     }
 };
 
-// Fungsi untuk login pengguna
 const userLogin = async (req, h) => {
     try {
         const { email, password } = req.payload;
-        const firebaseApiKey = process.env.FIREBASE_API_KEY;
 
-        const response = await axios.post(
-            `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${firebaseApiKey}`,
-            {
-                email,
-                password,
-                returnSecureToken: true,
-            }
-        );
+        const userSnapshot = await firestore.collection("users").where("email", "==", email).get();
 
-        const { idToken, localId } = response.data;
-
-        const userSnapshot = await firestore.collection("users").doc(localId).get();
-
-        if (!userSnapshot.exists) {
-            return h.response({ message: "User not found in Firestore" }).code(404);
+        if (userSnapshot.empty) {
+            return h.response({ message: "User not found" }).code(404);
         }
 
-        const userData = userSnapshot.data();
-        const { username } = userData;
+        const userData = userSnapshot.docs[0].data();
+
+        // Verifikasi password
+        const isPasswordValid = await bcrypt.compare(password, userData.password);
+        if (!isPasswordValid) {
+            return h.response({ message: "Incorrect password" }).code(401);
+        }
+
+        // Buat token JWT
+        const token = jwt.sign({ userId: userSnapshot.docs[0].id, email: userData.email, username: userData.username }, process.env.JWT_SECRET, { expiresIn: '1h' });
 
         return h
             .response({
                 status: "OK",
                 message: "Log in Successful",
-                token: idToken,
+                token: token,
+                userId: userSnapshot.docs[0].id, // Kirimkan userId
                 data: {
-                    email: email,
-                    username: username,
+                    email: userData.email,
+                    username: userData.username,
                 },
             })
-            .code(200)
-            .header("Content-Type", "application/json");
+            .code(200);
     } catch (error) {
-        if (error.response && error.response.status === 400) {
-            return h.response({ message: "Incorrect password" }).code(401);
-        }
-        return h.response({ message: "Failed to login user", error }).code(500);
+        console.error("Error logging in user:", error);
+        return h.response({ message: "Failed to log in user", error: error.message }).code(500);
     }
 };
 
-// Fungsi untuk mengisi data pengguna
+/* DATA POST edit
 const fillUserData = async (req, h) => {
     try {
-        const uid = req.user.uid;
+        const userId = req.user.userId; // Ambil userId dari token
         const {
             age,
             weight,
@@ -98,7 +103,14 @@ const fillUserData = async (req, h) => {
             allergies,
         } = req.payload;
 
-        await firestore.collection("users").doc(uid).update({
+        const userRef = firestore.collection("users").doc(userId); // Gunakan userId untuk mencari pengguna
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return h.response({ message: "User not found" }).code(404);
+        }
+
+        await userRef.update({
             age,
             weight,
             height,
@@ -112,12 +124,63 @@ const fillUserData = async (req, h) => {
         return h.response({ message: "User data updated successfully" }).code(200);
     } catch (error) {
         console.error("Error updating user data:", error);
-        return h.response({ message: "Failed to update user data", error }).code(500);
+        return h.response({ message: "Failed to update user data", error: error.message }).code(500);
     }
 };
+*/
+
+// PATCH
+const patchUserData = async (req, h) => {
+    try {
+        const userId = req.user.userId; // Ambil userId dari token
+        const updateData = req.payload; // Ambil data yang ingin diperbarui
+
+        const userRef = firestore.collection("users").doc(userId); // Gunakan userId untuk mencari pengguna
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return h.response({ message: "User not found" }).code(404);
+        }
+
+        await userRef.update(updateData); // Hanya memperbarui data yang diberikan
+
+        return h.response({ message: "User data updated successfully" }).code(200);
+    } catch (error) {
+        console.error("Error updating user data:", error);
+        return h.response({ message: "Failed to update user data", error: error.message }).code(500);
+    }
+};
+
+const getUserData = async (req, h) => {
+    try {
+        const userId = req.user.userId; // Ambil userId dari token
+
+        const userRef = firestore.collection("users").doc(userId); // Gunakan userId untuk mencari pengguna
+        const userDoc = await userRef.get();
+
+        if (!userDoc.exists) {
+            return h.response({ message: "User not found" }).code(404);
+        }
+
+        const userData = userDoc.data(); // Ambil data pengguna
+
+        // Kembalikan data pengguna tanpa menyertakan password
+        const { password, ...userWithoutPassword } = userData;
+
+        return h.response({
+            message: "User data retrieved successfully",
+            data: userWithoutPassword, // Kembalikan data pengguna
+        }).code(200);
+    } catch (error) {
+        console.error("Error retrieving user data:", error);
+        return h.response({ message: "Failed to retrieve user data", error: error.message }).code(500);
+    }
+};
+
 
 module.exports = {
     userRegister,
     userLogin,
-    fillUserData,
+    patchUserData,
+    getUserData,
 };

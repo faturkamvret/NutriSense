@@ -1,0 +1,45 @@
+apt install python3-pip
+git clone https://github.com/Wistchze/TFoodDetection
+install conda
+source /home/c283b4ky1436/anaconda3/bin/activate
+conda env create -f environment.yaml
+python3 -m pip install -r requirements.txt
+
+
+nano start_food_predict.sh
+#!/bin/bash
+source /home/c283b4ky1436/anaconda3/bin/activate
+conda activate mrcnn_env
+exec python3 /home/c283b4ky1436/detect/mask_rcnn/inference/food_predict_flask.py
+
+chmod +x /home/c283b4ky1436/start_food_predict.sh
+
+sudo nano 
+/etc/systemd/system/food_predict.service
+  [Unit]
+   Description=Food Prediction Service
+   After=network.target
+
+   [Service]
+   Type=simple
+   User=c283b4ky1436
+   ExecStart=/home/c283b4ky1436/start_food_predict.sh
+   WorkingDirectory=/home/c283b4ky1436/
+   Restart=always
+   Environment=PATH=/home/c283b4ky1436/anaconda3/bin:$PATH
+
+   [Install]
+   WantedBy=multi-user.target
+
+
+sudo systemctl daemon-reload
+sudo systemctl enable food_predict.service
+sudo systemctl start food_predict.service
+
+sudo systemctl status food_predict.service
+
+sudo systemctl restart food_predict.service
+
+
+journalctl -u food_predict.service
+

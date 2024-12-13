@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node ./src/server/server.js",
     "start-prod": "NODE_ENV=production node ./src/server/server.js",
     "start-dev": "nodemon ./src/server/server.js"
   },
@@ -11,11 +12,15 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google-cloud/firestore": "^7.11.0",
     "@hapi/hapi": "^21.3.12",
-    "@hapi/joi": "^17.1.1",
-    "axios": "^1.7.7",
+    "@tensorflow/tfjs-node": "^4.22.0",
+    "axios": "^1.7.9",
+    "bcrypt": "^5.1.1",
     "dotenv": "^16.4.5",
-    "firebase-admin": "^13.0.1"
+    "jsonwebtoken": "^9.0.2",
+    "uuid": "^9.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "nodemon": "^3.1.7"
