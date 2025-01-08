@@ -1,5 +1,5 @@
-Create ENV :
+Capstone Project NUTRISENSE
 
-[GOOGLE_SERVICE_ACCOUNT_JSON=, 
-MODEL_URL=, 
-JWT_SECRET=]
+BACKEND for : 
+1. Disease Prediction
+2. Food Detection
